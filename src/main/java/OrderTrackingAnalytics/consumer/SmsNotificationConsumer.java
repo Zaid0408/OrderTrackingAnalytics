@@ -10,14 +10,17 @@ import OrderTrackingAnalytics.config.RabbitMQConfig;
 import OrderTrackingAnalytics.model.dto.OrderEventsDTO;
 import OrderTrackingAnalytics.model.entity.NotificationLog;
 import OrderTrackingAnalytics.service.NotificationService;
+import OrderTrackingAnalytics.service.AnalyticsService;
 
 @Slf4j
 @Component
 public class SmsNotificationConsumer {
-private final NotificationService notificationService;
+    private final NotificationService notificationService;
+    private final AnalyticsService analyticsService;
 
-    public SmsNotificationConsumer(NotificationService notificationService) {
+    public SmsNotificationConsumer(NotificationService notificationService, AnalyticsService analyticsService) {
         this.notificationService = notificationService;
+        this.analyticsService = analyticsService;
     }
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_1_NAME)
@@ -36,6 +39,7 @@ private final NotificationService notificationService;
                 NotificationLog.NotificationType.SMS,
                 "SUCCESS"
             );
+            analyticsService.incrementSmsCount();
             log.info("Notification Log Saved for Order: {}", orderEventsDTO.getOrderId());
 
         } catch (Exception e) {

@@ -7,6 +7,7 @@ import OrderTrackingAnalytics.config.RabbitMQConfig;
 import OrderTrackingAnalytics.model.dto.OrderEventsDTO;
 import OrderTrackingAnalytics.model.entity.NotificationLog;
 import OrderTrackingAnalytics.service.NotificationService;
+import OrderTrackingAnalytics.service.AnalyticsService;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -14,9 +15,11 @@ import java.time.LocalDateTime;
 public class EmailNotificationConsumer {
 
     private final NotificationService notificationService;
+    private final AnalyticsService analyticsService;
 
-    public EmailNotificationConsumer(NotificationService notificationService) {
+    public EmailNotificationConsumer(NotificationService notificationService, AnalyticsService analyticsService) {
         this.notificationService = notificationService;
+        this.analyticsService = analyticsService;
     }
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_1_NAME)
@@ -35,6 +38,7 @@ public class EmailNotificationConsumer {
                 NotificationLog.NotificationType.EMAIL,
                 "SUCCESS"
             );
+            analyticsService.incrementEmailCount();
             log.info("Notification Log Saved for Order: {}", orderEventsDTO.getOrderId());
 
         } catch (Exception e) {
