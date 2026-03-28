@@ -22,15 +22,12 @@ public class NotificationLog {
     private String orderId;
 
     @Column(nullable = false)
-    private NotificationType type;
-
-    @Column(nullable = false)
     private String status;
 
     @Column(nullable = false)
     private LocalDateTime sentAt;
 
-    private enum NotificationType {
+    public enum NotificationType {
         EMAIL, SMS
     }
 }
