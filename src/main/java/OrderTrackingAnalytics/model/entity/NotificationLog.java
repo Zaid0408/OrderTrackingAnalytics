@@ -21,6 +21,10 @@ public class NotificationLog {
     @Column(nullable = false)
     private String orderId;
 
+    @Enumerated(EnumType.STRING)  // Added this annotation
+    @Column(nullable = false)      // Added this annotation
+    private NotificationType notificationType;  // THIS WAS MISSING!
+
     @Column(nullable = false)
     private String status;
 

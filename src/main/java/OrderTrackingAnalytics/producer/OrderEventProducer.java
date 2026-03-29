@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 // Method: publishOrderEvent(OrderEventDTO event)
 // Uses RabbitTemplate to send message to fanout exchange
+// Fanout: Broadcasts copies of the message to all queues bound to it
 @Slf4j
 @Service
 public class OrderEventProducer {
