@@ -13,5 +13,30 @@ import java.time.LocalDateTime;
 @Slf4j
 @Component
 public class AnalyticsConsumer {
-    
+    private final AnalyticsService analyticsService;
+    private final WebSocketService webSocketService;
+
+    public AnalyticsConsumer(AnalyticsService analyticsService, WebSocketService webSocketService){
+        this.analyticsService=analyticsService;
+        this.webSocketService=webSocketService;
+    }
+
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_3_NAME)
+    public void recieveAnalyticsEvent(OrderEventsDTO orderEventsDTO){
+        log.info("Analytics recieved for order: {}",orderEventsDTO.getOrderId());
+
+        // increment event count
+        analyticsService.incrementEventCount();
+
+        // get Updated metrics and push to WebSocket
+        MetricsDTO metricsDTO = analyticsService.getMetrics();
+        
+        metricsDTO.setLastUpdated(LocalDateTime.now());
+        
+        // push to websocket
+        webSocketService.pushMetrics(metricsDTO);
+
+        log.info("Analytics updated - Total events: {}", metricsDTO.getTotalEventsProcessed());
+
+    }
 }
