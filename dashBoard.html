@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Tracking Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: white; text-align: center; margin-bottom: 30px; font-size: 36px; }
+        
+        .status-bar {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .status { 
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .status.connected { background: #d1fae5; color: #065f46; }
+        .status.disconnected { background: #fee2e2; color: #991b1b; }
+        .status::before { content: '●'; margin-right: 8px; font-size: 12px; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .metric-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .metric-card:hover { transform: translateY(-4px); }
+        .metric-value {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        .metric-label { font-size: 14px; color: #666; font-weight: 500; text-transform: uppercase; }
+        .last-updated { font-size: 12px; color: #999; margin-top: 5px; }
+        
+        .order-form {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .order-form h2 { 
+            margin-bottom: 20px; 
+            color: #333;
+            font-size: 24px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        .form-group input {
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+        .message.success { background: #d1fae5; color: #065f46; display: block; }
+        .message.error { background: #fee2e2; color: #991b1b; display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Order Tracking Dashboard</h1>
+        
+        <div class="status-bar">
+            <div>
+                <span style="font-weight: 600; color: #333;">WebSocket Status:</span>
+                <span id="wsStatus" class="status disconnected">Disconnected</span>
+            </div>
+            <div id="lastUpdatedTime" style="color: #666; font-size: 14px;">Never updated</div>
+        </div>
+        
+        <div class="grid">
+            <div class="metric-card">
+                <div class="metric-value" id="totalEvents">0</div>
+                <div class="metric-label">Total Events</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="totalEmails">0</div>
+                <div class="metric-label">Emails Sent</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="totalSms">0</div>
+                <div class="metric-label">SMS Sent</div>
+            </div>
+        </div>
+        
+        <div class="order-form">
+            <h2>Create New Order</h2>
+            <form id="orderForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="orderId">Order ID</label>
+                        <input type="text" id="orderId" required placeholder="ORD-001">
+                    </div>
+                    <div class="form-group">
+                        <label for="amount">Amount ($)</label>
+                        <input type="number" id="amount" step="0.01" required placeholder="99.99">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Customer Email</label>
+                        <input type="email" id="email" required placeholder="customer@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Customer Phone</label>
+                        <input type="tel" id="phone" required placeholder="+1234567890">
+                    </div>
+                </div>
+                <button type="submit" id="submitBtn">Place Order</button>
+                <div id="message" class="message"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080';
+        let stompClient = null;
+
+        // WebSocket Connection
+        function connectWebSocket() {
+            const socket = new SockJS(API_URL + '/ws');
+            stompClient = Stomp.over(socket);
+            
+            stompClient.connect({}, function(frame) {
+                console.log('WebSocket Connected:', frame);
+                document.getElementById('wsStatus').textContent = 'Connected';
+                document.getElementById('wsStatus').className = 'status connected';
+                
+                // Subscribe to metrics updates
+                stompClient.subscribe('/topic/metrics', function(message) {
+                    const metrics = JSON.parse(message.body);
+                    console.log('Received metrics:', metrics);
+                    updateMetrics(metrics);
+                });
+                
+                // Fetch initial metrics
+                fetchMetrics();
+            }, function(error) {
+                console.error('WebSocket Error:', error);
+                document.getElementById('wsStatus').textContent = 'Disconnected';
+                document.getElementById('wsStatus').className = 'status disconnected';
+                
+                // Retry connection after 3 seconds
+                setTimeout(connectWebSocket, 3000);
+            });
+        }
+
+        // Fetch metrics via REST API
+        async function fetchMetrics() {
+            try {
+                const response = await fetch(API_URL + '/api/metrics');
+                const metrics = await response.json();
+                updateMetrics(metrics);
+            } catch (error) {
+                console.error('Error fetching metrics:', error);
+            }
+        }
+
+        // Update UI with metrics
+        function updateMetrics(metrics) {
+            document.getElementById('totalEvents').textContent = metrics.totalEventsProcessed;
+            document.getElementById('totalEmails').textContent = metrics.totalEmailsSent;
+            document.getElementById('totalSms').textContent = metrics.totalSmsSent;
+            
+            const lastUpdated = new Date(metrics.lastUpdated).toLocaleString();
+            document.getElementById('lastUpdatedTime').textContent = 'Last updated: ' + lastUpdated;
+        }
+
+        // Handle form submission
+        document.getElementById('orderForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const messageDiv = document.getElementById('message');
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Placing Order...';
+            messageDiv.style.display = 'none';
+            
+            const orderData = {
+                orderId: document.getElementById('orderId').value,
+                customerEmail: document.getElementById('email').value,
+                customerPhone: document.getElementById('phone').value,
+                amount: parseFloat(document.getElementById('amount').value)
+            };
+            
+            try {
+                const response = await fetch(API_URL + '/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
+                });
+                
+                if (response.ok) {
+                    messageDiv.textContent = '✓ Order placed successfully! Watch metrics update in real-time.';
+                    messageDiv.className = 'message success';
+                    
+                    // Auto-increment Order ID for next order
+                    const currentId = document.getElementById('orderId').value;
+                    const match = currentId.match(/(\d+)$/);
+                    if (match) {
+                        const nextNum = parseInt(match[1]) + 1;
+                        const prefix = currentId.replace(/\d+$/, '');
+                        document.getElementById('orderId').value = prefix + String(nextNum).padStart(match[1].length, '0');
+                    }
+                } else {
+                    throw new Error('Failed to place order');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                messageDiv.textContent = '✗ Failed to place order. Check console for details.';
+                messageDiv.className = 'message error';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Place Order';
+            }
+        });
+
+        // Initialize on page load
+        connectWebSocket();
+        
+        // Fetch metrics every 5 seconds as backup
+        setInterval(fetchMetrics, 5000);
+    </script>
+</body>
+</html>
