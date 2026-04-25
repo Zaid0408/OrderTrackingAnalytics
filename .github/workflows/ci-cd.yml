@@ -1,0 +1,47 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main,ci/cd ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Step 1: Checkout code
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    # Step 2: Set up Java 17
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+    
+    # Step 3: Build the application
+    - name: Build with Maven
+      run: ./mvnw clean install -DskipTests
+    
+    # Step 4: Run tests
+    - name: Run tests
+      run: ./mvnw test
+      env:
+        # Add RabbitMQ credentials as environment variables
+        SPRING_RABBITMQ_ADDRESSES: ${{ secrets.RABBITMQ_URL }}
+        SPRING_RABBITMQ_USERNAME: ${{ secrets.RABBITMQ_USERNAME }}
+        SPRING_RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
+    
+    # Step 5: Generate test report
+    - name: Publish Test Report
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Maven Tests
+        path: target/surefire-reports/*.xml
+        reporter: java-junit
+        fail-on-error: true
