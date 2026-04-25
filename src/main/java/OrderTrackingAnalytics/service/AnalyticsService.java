@@ -1,7 +1,6 @@
 package OrderTrackingAnalytics.service;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.springframework.stereotype.Service;

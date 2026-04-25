@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.ResponseEntity;
 import OrderTrackingAnalytics.model.dto.OrderEventsDTO;
 import OrderTrackingAnalytics.model.dto.MetricsDTO;
@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class OrderTrackingAnalyticsApplicationTests {
 
 	@Autowired
-	private org.springframework.boot.resttestclient.TestRestTemplate restTemplate;
+	private TestRestTemplate restTemplate;
 
 	@Autowired
 	private AnalyticsService analyticsService;
@@ -51,7 +51,7 @@ class OrderTrackingAnalyticsApplicationTests {
 		ResponseEntity<MetricsDTO> res= restTemplate.getForEntity(
 			"/api/metrics", 
 			MetricsDTO.class
-		)		
+		);		
 
 		// Assert that the response status is 200 (OK)
 		assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);

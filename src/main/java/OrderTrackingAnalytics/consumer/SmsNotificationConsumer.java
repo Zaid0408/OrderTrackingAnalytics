@@ -1,9 +1,6 @@
 package OrderTrackingAnalytics.consumer;
 
 import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
-
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import lombok.extern.slf4j.Slf4j;
 import OrderTrackingAnalytics.config.RabbitMQConfig;

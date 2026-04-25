@@ -8,7 +8,6 @@ import OrderTrackingAnalytics.model.dto.OrderEventsDTO;
 import OrderTrackingAnalytics.model.entity.NotificationLog;
 import OrderTrackingAnalytics.service.NotificationService;
 import OrderTrackingAnalytics.service.AnalyticsService;
-import java.time.LocalDateTime;
 
 @Slf4j
 @Component

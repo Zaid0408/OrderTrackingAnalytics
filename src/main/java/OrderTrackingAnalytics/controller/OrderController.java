@@ -6,9 +6,7 @@ import OrderTrackingAnalytics.model.dto.OrderEventsDTO;
 import org.apache.hc.core5.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import lombok.extern.slf4j.Slf4j;
-import java.net.URI;
 
 import OrderTrackingAnalytics.producer.OrderEventProducer;
 
