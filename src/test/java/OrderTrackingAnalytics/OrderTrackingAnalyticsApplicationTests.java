@@ -62,36 +62,62 @@ class OrderTrackingAnalyticsApplicationTests {
 	}
 
 	@Test
-void testMultipleOrders_MetricsIncrement() throws InterruptedException {
-    // Arrange: Get initial metrics
-    MetricsDTO initialMetrics = restTemplate.getForObject(
-        "/api/metrics",
-        MetricsDTO.class
-    );
-    
-    // Act: Send 5 orders
-    for (int i = 1; i <= 5; i++) {
-        OrderEventsDTO order = OrderEventsDTO.builder()
-            .orderId("LOOP-ORD-" + i)
-            .customerEmail("test" + i + "@example.com")
-            .customerPhone("+123456789" + i)
-            .amount(50.0 * i)
-            .build();
-        
-        restTemplate.postForEntity("/api/orders", order, OrderEventsDTO.class);
-    }
-    
-    // Wait for async processing (consumers need time)
-    Thread.sleep(3000); // 3 seconds
-    
-    // Assert: Check metrics increased
-    MetricsDTO finalMetrics = restTemplate.getForObject(
-        "/api/metrics",
-        MetricsDTO.class
-    );
-    
-    assertThat(finalMetrics.getTotalEventsProcessed())
-        .isGreaterThanOrEqualTo(initialMetrics.getTotalEventsProcessed() + 5);
-}
+	void testMultipleOrders_MetricsIncrement() throws InterruptedException {
+		// Arrange: Get initial metrics
+		MetricsDTO initialMetrics = restTemplate.getForObject(
+			"/api/metrics",
+			MetricsDTO.class
+		);
+		
+		// Act: Send 5 orders
+		for (int i = 1; i <= 5; i++) {
+			OrderEventsDTO order = OrderEventsDTO.builder()
+				.orderId("LOOP-ORD-" + i)
+				.customerEmail("test" + i + "@example.com")
+				.customerPhone("+123456789" + i)
+				.amount(50.0 * i)
+				.build();
+			
+			restTemplate.postForEntity("/api/orders", order, OrderEventsDTO.class);
+		}
+		
+		// Wait for async processing (consumers need time)
+		Thread.sleep(3000); // 3 seconds
+		
+		// Assert: Check metrics increased
+		MetricsDTO finalMetrics = restTemplate.getForObject(
+			"/api/metrics",
+			MetricsDTO.class
+		);
+		
+		assertThat(finalMetrics.getTotalEventsProcessed())
+			.isGreaterThanOrEqualTo(initialMetrics.getTotalEventsProcessed() + 5);
+	}
+
+	@Test
+	void testAnalyticsServicePushesUpdates() throws InterruptedException {
+		// Arrange: Get initial count
+		Long initialCount = analyticsService.getMetrics().getTotalEventsProcessed();
+		
+		// Act: Send order
+		OrderEventsDTO order = OrderEventsDTO.builder()
+			.orderId("ANALYTICS-001")
+			.customerEmail("test@example.com")
+			.customerPhone("+1234567890")
+			.amount(99.99)
+			.build();
+		
+		restTemplate.postForEntity("/api/orders", order, OrderEventsDTO.class);
+		
+		// Wait for processing
+		Thread.sleep(2000);
+		
+		// Assert: Analytics service was updated
+		Long finalCount = analyticsService.getMetrics().getTotalEventsProcessed();
+		assertThat(finalCount).isGreaterThan(initialCount);
+		
+		// This proves AnalyticsConsumer processed the message
+		// and incremented the counter (which also triggers WebSocket push)
+	}
 
 }

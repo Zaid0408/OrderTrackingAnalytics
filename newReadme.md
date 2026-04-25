@@ -112,6 +112,13 @@ curl http://localhost:8080/api/metrics
 - JDBC URL: `jdbc:h2:mem:orderdb`
 - Query: `SELECT * FROM notification_log;`
 
+### **5. Integration tests**
+
+```bash
+# Ensure that App is already running.
+./mvnw test
+```
+
 ---
 
 ## Key Learning Outcomes
