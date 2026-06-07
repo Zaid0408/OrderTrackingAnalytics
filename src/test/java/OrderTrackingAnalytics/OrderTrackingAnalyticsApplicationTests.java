@@ -5,6 +5,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.http.ResponseEntity;
 import OrderTrackingAnalytics.model.dto.OrderEventsDTO;
 import OrderTrackingAnalytics.model.dto.MetricsDTO;
@@ -12,6 +13,7 @@ import OrderTrackingAnalytics.service.AnalyticsService;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureTestRestTemplate
 class OrderTrackingAnalyticsApplicationTests {
 
 	@Autowired
