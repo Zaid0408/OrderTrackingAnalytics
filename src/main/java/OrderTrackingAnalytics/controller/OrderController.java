@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import OrderTrackingAnalytics.producer.OrderEventProducer;
 
 @Slf4j
+@CrossOrigin(origins = {"http://localhost:8000", "null"})
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {

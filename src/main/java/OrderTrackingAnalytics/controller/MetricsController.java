@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @Slf4j
+@CrossOrigin(origins = {"http://localhost:8000", "null"})
 @RequestMapping("/api/metrics")
 public class MetricsController{
     private final AnalyticsService analyticsService;

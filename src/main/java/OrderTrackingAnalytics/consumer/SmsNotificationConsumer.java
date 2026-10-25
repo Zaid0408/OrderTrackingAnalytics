@@ -20,7 +20,7 @@ public class SmsNotificationConsumer {
         this.analyticsService = analyticsService;
     }
 
-    @RabbitListener(queues = RabbitMQConfig.QUEUE_1_NAME)
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_2_NAME)
     public void recieveSmsNotification(OrderEventsDTO orderEventsDTO)
     {
         log.info("SMS Notification Recieved for Order: {}",orderEventsDTO.getOrderId());
