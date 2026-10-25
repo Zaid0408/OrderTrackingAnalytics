@@ -210,6 +210,8 @@
                 
                 // Retry connection after 3 seconds
                 setTimeout(connectWebSocket, 3000);
+                // Only once at startup to get the initial value
+                // fetchMetrics();
             });
         }
 
@@ -287,8 +289,6 @@
         // Initialize on page load
         connectWebSocket();
         
-        // Fetch metrics every 5 seconds as backup
-        setInterval(fetchMetrics, 5000);
     </script>
 </body>
 </html>
